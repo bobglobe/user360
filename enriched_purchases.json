@@ -1,0 +1,57 @@
+[
+  {
+    "name": "user_id",
+    "type": "STRING"
+  },
+  {
+    "name": "first_name",
+    "type": "STRING"
+  },
+  {
+    "name": "yob",
+    "type": "INTEGER"
+  },
+  {
+    "name": "zipcode",
+    "type": "STRING"
+  },
+  {
+    "name": "purchase_date",
+    "type": "DATE"
+  },
+  {
+    "name": "purchase_sku",
+    "type": "INTEGER"
+  },
+  {
+    "name": "purchase_quantity",
+    "type": "INTEGER"
+  },
+  {
+    "name": "purchase_price",
+    "type": "INTEGER"
+  },
+  {
+    "fields": [
+      {
+        "name": "purchase_date",
+        "type": "DATE"
+      },
+      {
+        "name": "purchase_sku",
+        "type": "INTEGER"
+      },
+      {
+        "name": "purchase_quantity",
+        "type": "INTEGER"
+      },
+      {
+        "name": "purchase_price",
+        "type": "INTEGER"
+      }
+    ],
+    "mode": "REPEATED",
+    "name": "past_purchases",
+    "type": "RECORD"
+  }
+]
