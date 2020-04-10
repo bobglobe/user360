@@ -1,30 +1,30 @@
 # user360
-##Goal
+## Goal
 
 Create an “enriched_purchase” table with the following schema so that we can train vectorize & train without doing expensive joins
 
 Cf `enriched_purchases.json`
 
 
-##Input
+## Input
 Purchase table (cf `purchase.json`)
 1 file / day
 
 
 
 
-##Current approach and its limit
+## Current approach and its limit
 
 Asset is build on the fly with very expensive joins going back 24 months of purchase data
 
 
-##New potential approach
+## New potential approach
 
 Build incrementally an enriched_user asset that will include in an array all past purchases until today
 That way, this enriched_purchase$20200305 can be easily created on the fly by joining the last partition of purchases$20200305 with enriched_user$20200305....With clustering added. This could be a much cheaper approach
 
 
-##current query
+## current query (not working)
 
 ```
 #standardSQL
@@ -80,3 +80,6 @@ ON
   today.user_id=enriched.user_id
   GROUP By user_id
 ```
+
+Error is
+`Correlated subqueries that reference other tables are not supported unless they can be de-correlated, such as by transforming them into an efficient JOIN.`
