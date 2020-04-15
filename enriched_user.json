@@ -1,0 +1,33 @@
+[
+  {
+    "name": "user_id",
+    "type": "STRING"
+  },
+  {
+    "name": "date",
+    "type": "DATE"
+  },
+  {
+    "fields": [
+      {
+        "name": "date",
+        "type": "DATE"
+      },
+      {
+        "name": "sku",
+        "type": "INTEGER"
+      },
+      {
+        "name": "quantity",
+        "type": "INTEGER"
+      },
+      {
+        "name": "price",
+        "type": "INTEGER"
+      }
+    ],
+    "mode": "REPEATED",
+    "name": "past_purchases",
+    "type": "RECORD"
+  }
+]
