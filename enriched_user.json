@@ -10,7 +10,7 @@
   {
     "fields": [
       {
-        "name": "date",
+        "name": "purchase_date",
         "type": "DATE"
       },
       {

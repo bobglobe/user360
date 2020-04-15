@@ -1,17 +1,17 @@
 #!/bin/bash
 # BQ Build Incremental Enriched
-# bq mk --project_id=sandbox-airflow-test --table --time_partitioning_type=DAY --clustering_fields=user_id --schema=vandenborre/enriched_user.json vandenborre.brute_force_enriched_user
-# Parameters:
-#BQ_PROJECT
-#DATASET
-#INPUT DATE
-# bash bq_build_past_purchase_array_incremental.bash sandbox-airflow-test bq_structure 2020-03-01
-#
-BQ_PROJECT=$1
-DATASET=$2
-USER_TABLE=enriched_user
+
+BQ_PROJECT=sandbox-airflow-test
+DATASET=bq_structure2
+USER_TABLE=enriched_user_windowed
 PURCHASE_TABLE=purchases
-OUTPUT_TABLE=enriched_user
+OUTPUT_TABLE=enriched_user_windowed
+history=3 # in Days
+
+#Step1 : Create the Asset with the folloowing command
+#bq mk --project_id=$BQ_PROJECT --table --time_partitioning_type=DAY --time_partitioning_field=date --clustering_fields=user_id --schema=enriched_user.json $DATASET.$OUTPUT_TABLE
+
+#enriched_user_windowed will keep array of past_purchases (i.e. date < today) and date > today -$history.days
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
@@ -22,22 +22,23 @@ case "${unameOut}" in
     *)          dateFn="UNKNOWN:${unameOut}"
 esac
 
-today=$(${dateFn} -d $3 +'%Y-%m-%d')
-yesterday=$(${dateFn} -d "$3 -1days" +%Y-%m-%d)
-
+today=$(${dateFn} -d $1 +'%Y-%m-%d')
+yesterday=$(${dateFn} -d "$1 -1days" +%Y-%m-%d)
+start_date=$(${dateFn} -d "$1 -$history days" +%Y-%m-%d)
 
   query="
     WITH  yesterday_enriched_user AS (
     SELECT  user_id,
             DATE('$yesterday') AS dat,
-            past_purchases
-    FROM    $BQ_PROJECT.$DATASET.$USER_TABLE
-    WHERE   date='$yesterday'
+            ARRAY_AGG(STRUCT( past.purchase_date,sku, quantity,price)) as past_purchases
+    FROM    $BQ_PROJECT.$DATASET.$USER_TABLE, UNNEST(past_purchases) as past
+    WHERE   date='$yesterday' and past.purchase_date>='$start_date'
+    GROUP BY 1,2
   ),
         todays_purchases AS
   (
     SELECT  user_id,
-            DATE('$today') AS dat,
+            DATE('$yesterday') AS dat,
             ARRAY_AGG(  STRUCT( date,
                                 sku,
                                 quantity,
@@ -45,7 +46,7 @@ yesterday=$(${dateFn} -d "$3 -1days" +%Y-%m-%d)
                               )
                      ) AS today_purchase_array
     FROM  $BQ_PROJECT.$DATASET.purchases
-    WHERE date = '$today'
+    WHERE date = '$yesterday'
     GROUP BY  user_id
   )
 
@@ -53,7 +54,8 @@ yesterday=$(${dateFn} -d "$3 -1days" +%Y-%m-%d)
           DATE('$today') AS date,
           ARRAY_CONCAT_AGG(purchases) AS past_purchases
   FROM
-        ( SELECT  user_id,
+        (
+          SELECT  user_id,
                   past_purchases AS purchases
           FROM    yesterday_enriched_user AS enriched
           WHERE   dat = '$yesterday'
@@ -66,4 +68,4 @@ yesterday=$(${dateFn} -d "$3 -1days" +%Y-%m-%d)
   "
   echo "$query"
   echo "+++++++++++++++++"
-  bq query --debug_mode -n 0 --replace --use_legacy_sql=false --destination_table $DATASET.${OUTPUT_TABLE}\$$3 "$query"
+  bq query  -n 0 --replace --use_legacy_sql=false --destination_table $DATASET.${OUTPUT_TABLE}\$$1 "$query"
